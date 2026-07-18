@@ -208,11 +208,17 @@ export function MotoristaHomeScreen() {
     (aluno) => aluno.situacao !== "aguardando" && aluno.situacao !== "revisitar",
   ).length;
 
+  // Modo Viagem apresenta os alunos em ordem alfabética, não pela ordem do
+  // trajeto (alunosConfirmados) — o motorista pode embarcar fora da ordem
+  // dos pontos, então a busca do próximo aluno usa essa cópia separada. O
+  // agrupamento por ponto abaixo continua usando alunosConfirmados original.
+  const emOrdemAlfabetica = [...alunosConfirmados].sort((a, b) => a.nome.localeCompare(b.nome));
+
   const alunoAguardando =
-    alunosConfirmados.find((aluno) => aluno.situacao === "aguardando") ?? null;
+    emOrdemAlfabetica.find((aluno) => aluno.situacao === "aguardando") ?? null;
 
   const alunoParaRevisitar =
-    alunosConfirmados.find((aluno) => aluno.situacao === "revisitar") ?? null;
+    emOrdemAlfabetica.find((aluno) => aluno.situacao === "revisitar") ?? null;
 
   const alunoAtualModo = alunoAguardando ?? alunoParaRevisitar;
 

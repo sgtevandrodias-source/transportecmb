@@ -169,6 +169,9 @@ export function ResponsavelHomeScreen() {
     return null;
   }
 
+  const podeConfirmarIda = viagemIda !== null && viagemIda.status === "programada";
+  const podeConfirmarVolta = viagemVolta !== null && viagemVolta.status === "programada";
+
   return (
     <ScreenContainer>
       <ScreenHeader
@@ -272,133 +275,137 @@ export function ResponsavelHomeScreen() {
           </View>
         )}
 
-        <Card style={styles.tripCard}>
-          <Text style={[styles.cardTitle, { color: theme.primary }]}>Próxima viagem de ida</Text>
+        {viagemIda && (
+          <Card style={styles.tripCard}>
+            <Text style={[styles.cardTitle, { color: theme.primary }]}>Próxima viagem de ida</Text>
 
-          {viagemIda ? (
-            <>
-              <Text style={[styles.tripTitle, { color: theme.text }]}>Ida para o CMB</Text>
-              {(["data", "horario", "turno", "motorista"] as const).map((campo) => (
-                <View key={campo} style={styles.infoRow}>
-                  <Text style={[styles.infoLabel, { color: theme.textMuted }]}>
-                    {campo === "data"
-                      ? "Data"
-                      : campo === "horario"
-                        ? "Horário previsto"
-                        : campo === "turno"
-                          ? "Turno"
-                          : "Motorista"}
-                  </Text>
-                  <Text style={[styles.infoValue, { color: theme.text }]}>{viagemIda[campo]}</Text>
-                </View>
-              ))}
-            </>
-          ) : (
-            <Text style={[styles.noTripText, { color: theme.textSecondary }]}>
-              Nenhuma viagem de ida programada.
+            <Text style={[styles.tripTitle, { color: theme.text }]}>Ida para o CMB</Text>
+            {(["data", "horario", "turno", "motorista"] as const).map((campo) => (
+              <View key={campo} style={styles.infoRow}>
+                <Text style={[styles.infoLabel, { color: theme.textMuted }]}>
+                  {campo === "data"
+                    ? "Data"
+                    : campo === "horario"
+                      ? "Horário previsto"
+                      : campo === "turno"
+                        ? "Turno"
+                        : "Motorista"}
+                </Text>
+                <Text style={[styles.infoValue, { color: theme.text }]}>{viagemIda[campo]}</Text>
+              </View>
+            ))}
+          </Card>
+        )}
+
+        {viagemVolta && (
+          <Card style={styles.tripCard}>
+            <Text style={[styles.cardTitle, { color: theme.primary }]}>Próxima viagem de volta</Text>
+
+            <Text style={[styles.tripTitle, { color: theme.text }]}>Volta do CMB</Text>
+            {(["data", "horario", "turno", "motorista"] as const).map((campo) => (
+              <View key={campo} style={styles.infoRow}>
+                <Text style={[styles.infoLabel, { color: theme.textMuted }]}>
+                  {campo === "data"
+                    ? "Data"
+                    : campo === "horario"
+                      ? "Horário previsto"
+                      : campo === "turno"
+                        ? "Turno"
+                        : "Motorista"}
+                </Text>
+                <Text style={[styles.infoValue, { color: theme.text }]}>{viagemVolta[campo]}</Text>
+              </View>
+            ))}
+          </Card>
+        )}
+
+        {podeConfirmarIda && (
+          <>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>Confirmação de ida</Text>
+
+            <View style={styles.optionsRow}>
+              <View style={styles.optionButtonWrapper}>
+                <Button
+                  label="Vai na ida"
+                  variant="success"
+                  icon={CheckIcon}
+                  onPress={() => confirmar("ida", "vai")}
+                />
+              </View>
+              <View style={styles.optionButtonWrapper}>
+                <Button
+                  label="Não vai"
+                  variant="danger"
+                  icon={XIcon}
+                  onPress={() => confirmar("ida", "nao-vai")}
+                />
+              </View>
+            </View>
+
+            <View style={styles.maybeButtonWrapper}>
+              <Button
+                label="Ainda não sei"
+                variant="secondary"
+                onPress={() => confirmar("ida", "nao-sei")}
+              />
+            </View>
+
+            <View style={[styles.statusCard, { backgroundColor: corDeFundo(confirmacaoIda) }]}>
+              <Text style={[styles.statusTitle, { color: theme.text }]}>Situação atual</Text>
+              <Text style={[styles.statusBadge, { color: theme.text }]}>
+                {textoConfirmacaoIda[confirmacaoIda]}
+              </Text>
+              <Text style={[styles.statusDescription, { color: theme.textSecondary }]}>
+                {descricaoConfirmacaoIda[confirmacaoIda]}
+              </Text>
+            </View>
+          </>
+        )}
+
+        {podeConfirmarVolta && (
+          <>
+            <Text style={[styles.sectionTitle, styles.returnTitle, { color: theme.text }]}>
+              Confirmação de volta
             </Text>
-          )}
-        </Card>
 
-        <Card style={styles.tripCard}>
-          <Text style={[styles.cardTitle, { color: theme.primary }]}>Próxima viagem de volta</Text>
+            <View style={styles.optionsRow}>
+              <View style={styles.optionButtonWrapper}>
+                <Button
+                  label="Volta no ônibus"
+                  variant="success"
+                  icon={CheckIcon}
+                  onPress={() => confirmar("volta", "vai")}
+                />
+              </View>
+              <View style={styles.optionButtonWrapper}>
+                <Button
+                  label="Não volta"
+                  variant="danger"
+                  icon={XIcon}
+                  onPress={() => confirmar("volta", "nao-vai")}
+                />
+              </View>
+            </View>
 
-          {viagemVolta ? (
-            <>
-              <Text style={[styles.tripTitle, { color: theme.text }]}>Volta do CMB</Text>
-              {(["data", "horario", "turno", "motorista"] as const).map((campo) => (
-                <View key={campo} style={styles.infoRow}>
-                  <Text style={[styles.infoLabel, { color: theme.textMuted }]}>
-                    {campo === "data"
-                      ? "Data"
-                      : campo === "horario"
-                        ? "Horário previsto"
-                        : campo === "turno"
-                          ? "Turno"
-                          : "Motorista"}
-                  </Text>
-                  <Text style={[styles.infoValue, { color: theme.text }]}>{viagemVolta[campo]}</Text>
-                </View>
-              ))}
-            </>
-          ) : (
-            <Text style={[styles.noTripText, { color: theme.textSecondary }]}>
-              Nenhuma viagem de volta programada.
-            </Text>
-          )}
-        </Card>
+            <View style={styles.maybeButtonWrapper}>
+              <Button
+                label="Ainda não sei"
+                variant="secondary"
+                onPress={() => confirmar("volta", "nao-sei")}
+              />
+            </View>
 
-        <Text style={[styles.sectionTitle, { color: theme.text }]}>Confirmação de ida</Text>
-
-        <View style={styles.optionsRow}>
-          <View style={styles.optionButtonWrapper}>
-            <Button
-              label="Vai na ida"
-              variant="success"
-              icon={CheckIcon}
-              onPress={() => confirmar("ida", "vai")}
-            />
-          </View>
-          <View style={styles.optionButtonWrapper}>
-            <Button
-              label="Não vai"
-              variant="danger"
-              icon={XIcon}
-              onPress={() => confirmar("ida", "nao-vai")}
-            />
-          </View>
-        </View>
-
-        <View style={styles.maybeButtonWrapper}>
-          <Button label="Ainda não sei" variant="secondary" onPress={() => confirmar("ida", "nao-sei")} />
-        </View>
-
-        <View style={[styles.statusCard, { backgroundColor: corDeFundo(confirmacaoIda) }]}>
-          <Text style={[styles.statusTitle, { color: theme.text }]}>Situação atual</Text>
-          <Text style={[styles.statusBadge, { color: theme.text }]}>
-            {textoConfirmacaoIda[confirmacaoIda]}
-          </Text>
-          <Text style={[styles.statusDescription, { color: theme.textSecondary }]}>
-            {descricaoConfirmacaoIda[confirmacaoIda]}
-          </Text>
-        </View>
-
-        <Text style={[styles.sectionTitle, styles.returnTitle, { color: theme.text }]}>
-          Confirmação de volta
-        </Text>
-
-        <View style={styles.optionsRow}>
-          <View style={styles.optionButtonWrapper}>
-            <Button
-              label="Volta no ônibus"
-              variant="success"
-              icon={CheckIcon}
-              onPress={() => confirmar("volta", "vai")}
-            />
-          </View>
-          <View style={styles.optionButtonWrapper}>
-            <Button
-              label="Não volta"
-              variant="danger"
-              icon={XIcon}
-              onPress={() => confirmar("volta", "nao-vai")}
-            />
-          </View>
-        </View>
-
-        <View style={styles.maybeButtonWrapper}>
-          <Button label="Ainda não sei" variant="secondary" onPress={() => confirmar("volta", "nao-sei")} />
-        </View>
-
-        <View style={[styles.statusCard, { backgroundColor: corDeFundo(confirmacaoVolta) }]}>
-          <Text style={[styles.statusTitle, { color: theme.text }]}>Situação da volta</Text>
-          <Text style={[styles.statusBadge, { color: theme.text }]}>
-            {textoConfirmacaoVolta[confirmacaoVolta]}
-          </Text>
-          <Text style={[styles.statusDescription, { color: theme.textSecondary }]}>
-            {descricaoConfirmacaoVolta[confirmacaoVolta]}
-          </Text>
-        </View>
+            <View style={[styles.statusCard, { backgroundColor: corDeFundo(confirmacaoVolta) }]}>
+              <Text style={[styles.statusTitle, { color: theme.text }]}>Situação da volta</Text>
+              <Text style={[styles.statusBadge, { color: theme.text }]}>
+                {textoConfirmacaoVolta[confirmacaoVolta]}
+              </Text>
+              <Text style={[styles.statusDescription, { color: theme.textSecondary }]}>
+                {descricaoConfirmacaoVolta[confirmacaoVolta]}
+              </Text>
+            </View>
+          </>
+        )}
       </ScrollView>
     </ScreenContainer>
   );
@@ -479,11 +486,6 @@ const styles = StyleSheet.create({
   infoValue: {
     fontSize: 14,
     fontWeight: "600",
-  },
-  noTripText: {
-    fontSize: 15,
-    lineHeight: 22,
-    marginTop: 12,
   },
   sectionTitle: {
     fontSize: 20,
