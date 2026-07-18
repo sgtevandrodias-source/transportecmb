@@ -67,3 +67,63 @@ export async function enviarPushParaUsuario(
     }),
   );
 }
+
+/** Envia a mesma notificação para vários usuários de uma vez. */
+export async function enviarPushParaVarios(
+  env: Env,
+  usuarioIds: number[],
+  mensagem: { titulo: string; corpo: string; url?: string },
+): Promise<void> {
+  await Promise.all(usuarioIds.map((usuarioId) => enviarPushParaUsuario(env, usuarioId, mensagem)));
+}
+
+export type AlunoConfirmado = {
+  alunoId: number;
+  responsavelId: number | null;
+  situacao: string | null;
+};
+
+/**
+ * Alunos "previstos" (= confirmados) de uma viagem: aqueles cujo responsável
+ * confirmou presença (`confirmacoes.confirmacao = 'vai'`) para aquele
+ * sentido/viagem — não tem relação com o turno do aluno. `situacao` vem de
+ * `embarques` via LEFT JOIN e fica `null` quando o motorista ainda não
+ * registrou nada (equivalente a "aguardando").
+ */
+export async function buscarAlunosConfirmados(
+  env: Env,
+  viagemId: number,
+  sentido: string,
+): Promise<AlunoConfirmado[]> {
+  const { results } = await env.DB.prepare(
+    `SELECT a.id as alunoId, a.responsavel_id as responsavelId, e.situacao as situacao
+     FROM confirmacoes c
+     JOIN alunos a ON a.id = c.aluno_id
+     LEFT JOIN embarques e ON e.viagem_id = c.viagem_id AND e.aluno_id = c.aluno_id
+     WHERE c.sentido = ? AND c.viagem_id = ? AND c.confirmacao = 'vai'`,
+  )
+    .bind(sentido, viagemId)
+    .all<AlunoConfirmado>();
+
+  return results;
+}
+
+/** Ids distintos dos responsáveis dos alunos previstos/confirmados de uma viagem. */
+export async function buscarResponsaveisConfirmados(
+  env: Env,
+  viagemId: number,
+  sentido: string,
+): Promise<number[]> {
+  const alunos = await buscarAlunosConfirmados(env, viagemId, sentido);
+
+  return [...new Set(alunos.map((aluno) => aluno.responsavelId).filter((id): id is number => id !== null))];
+}
+
+/** Ids de todos os usuários com perfil de gestor. */
+export async function buscarGestores(env: Env): Promise<number[]> {
+  const { results } = await env.DB.prepare("SELECT id FROM usuarios WHERE perfil = 'gestor'").all<{
+    id: number;
+  }>();
+
+  return results.map((registro) => registro.id);
+}

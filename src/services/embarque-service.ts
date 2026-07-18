@@ -62,7 +62,9 @@ async function registrarSituacaoAluno(
 
 /**
  * Valida se a viagem pode ser finalizada: todo aluno confirmado precisa ter
- * uma situação definitiva e, na volta, ninguém pode continuar embarcado.
+ * uma situação definitiva e ninguém pode continuar embarcado — vale para os
+ * dois sentidos, já que "embarcou" só passa a "desembarcou" tanto na chegada
+ * ao CMB (ida) quanto na entrega em casa (volta).
  * Retorna uma mensagem de erro ou null se estiver tudo certo.
  */
 function validarFinalizacaoEmbarque(
@@ -90,14 +92,12 @@ function validarFinalizacaoEmbarque(
     );
   }
 
-  if (sentido === "volta") {
-    const aindaABordo = alunosConfirmados.filter(
-      (aluno) => aluno.situacao === "embarcou",
-    );
+  const aindaABordo = alunosConfirmados.filter(
+    (aluno) => aluno.situacao === "embarcou",
+  );
 
-    if (aindaABordo.length > 0) {
-      return `Ainda existem ${aindaABordo.length} aluno(s) dentro do veículo.`;
-    }
+  if (aindaABordo.length > 0) {
+    return `Ainda existem ${aindaABordo.length} aluno(s) dentro do veículo.`;
   }
 
   return null;

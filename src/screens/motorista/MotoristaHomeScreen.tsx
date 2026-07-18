@@ -216,7 +216,7 @@ export function MotoristaHomeScreen() {
 
   const alunoAtualModo = alunoAguardando ?? alunoParaRevisitar;
 
-  const alunosEmbarcadosNaVolta = alunosConfirmados.filter(
+  const alunosParaEntrega = alunosConfirmados.filter(
     (aluno) => aluno.situacao === "embarcou" || aluno.situacao === "desembarcou",
   );
 
@@ -225,7 +225,7 @@ export function MotoristaHomeScreen() {
   );
 
   const deveAbrirModoEntrega =
-    viagemAtual?.sentido === "volta" && !aindaHaPendenciasDeEmbarque && alunosEmbarcadosNaVolta.length > 0;
+    !aindaHaPendenciasDeEmbarque && alunosParaEntrega.length > 0;
 
   const progresso =
     alunosConfirmados.length > 0
@@ -254,7 +254,7 @@ export function MotoristaHomeScreen() {
       return (
         <DeliveryMode
           viagemAtual={viagemAtual}
-          alunosDaVolta={alunosEmbarcadosNaVolta}
+          alunosParaEntrega={alunosParaEntrega}
           onVoltar={() => setModoViagem(false)}
           onAlterarSituacao={alterarSituacao}
           onFinalizarViagem={finalizarEmbarque}

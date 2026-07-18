@@ -220,7 +220,11 @@ export function GestorHomeScreen() {
 
         <View style={styles.menuGrid}>
           {menu.map((item) => (
-            <TouchableOpacity key={item.href} onPress={() => router.push(item.href)}>
+            <TouchableOpacity
+              key={item.href}
+              style={styles.menuItemWrapper}
+              onPress={() => router.push(item.href)}
+            >
               <Card style={styles.menuCard}>
                 <View style={[styles.menuIcon, { backgroundColor: theme.infoBg }]}>
                   <item.icone size={22} color={theme.primary} weight="bold" />
@@ -332,8 +336,10 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     gap: 12,
   },
-  menuCard: {
+  menuItemWrapper: {
     width: "48%",
+  },
+  menuCard: {
     minHeight: 145,
   },
   menuIcon: {

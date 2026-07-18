@@ -17,7 +17,7 @@ import { useTheme } from "@/hooks/use-theme";
 
 type DeliveryModeProps = {
   viagemAtual: Viagem;
-  alunosDaVolta: AlunoMotorista[];
+  alunosParaEntrega: AlunoMotorista[];
   onVoltar: () => void;
   onAlterarSituacao: (alunoId: number, novaSituacao: SituacaoEmbarque) => void;
   onFinalizarViagem: () => void;
@@ -25,15 +25,17 @@ type DeliveryModeProps = {
 
 export function DeliveryMode({
   viagemAtual,
-  alunosDaVolta,
+  alunosParaEntrega,
   onVoltar,
   onAlterarSituacao,
   onFinalizarViagem,
 }: DeliveryModeProps) {
   const theme = useTheme();
 
-  const alunosABordo = alunosDaVolta.filter((aluno) => aluno.situacao === "embarcou");
-  const alunosDesembarcados = alunosDaVolta.filter((aluno) => aluno.situacao === "desembarcou");
+  const ehIda = viagemAtual.sentido === "ida";
+
+  const alunosABordo = alunosParaEntrega.filter((aluno) => aluno.situacao === "embarcou");
+  const alunosDesembarcados = alunosParaEntrega.filter((aluno) => aluno.situacao === "desembarcou");
   const totalPassageiros = alunosABordo.length + alunosDesembarcados.length;
   const progresso =
     totalPassageiros > 0
@@ -63,7 +65,9 @@ export function DeliveryMode({
           </TouchableOpacity>
 
           <Text style={[styles.title, { color: theme.onPrimary }]}>Modo Entrega</Text>
-          <Text style={[styles.subtitle, { color: theme.onPrimaryMuted }]}>Volta do CMB</Text>
+          <Text style={[styles.subtitle, { color: theme.onPrimaryMuted }]}>
+            {ehIda ? "Chegada ao CMB" : "Volta do CMB"}
+          </Text>
           <Text style={[styles.tripInfo, { color: theme.onPrimaryMuted }]}>
             {viagemAtual.data} • {viagemAtual.turno} • {viagemAtual.horario}
           </Text>
@@ -106,7 +110,9 @@ export function DeliveryMode({
               <Text style={[styles.summaryNumber, { color: theme.primary }]}>
                 {alunosDesembarcados.length}
               </Text>
-              <Text style={[styles.summaryLabel, { color: theme.textMuted }]}>Entregues</Text>
+              <Text style={[styles.summaryLabel, { color: theme.textMuted }]}>
+                {ehIda ? "Chegaram" : "Entregues"}
+              </Text>
             </Card>
           </View>
 
@@ -114,10 +120,12 @@ export function DeliveryMode({
             <View style={[styles.completedCard, { backgroundColor: theme.successBg }]}>
               <CheckCircleIcon size={48} color={theme.success} weight="fill" />
               <Text style={[styles.completedTitle, { color: theme.success }]}>
-                Todos os alunos foram entregues
+                {ehIda ? "Todos os alunos chegaram ao CMB" : "Todos os alunos foram entregues"}
               </Text>
               <Text style={[styles.completedText, { color: theme.text }]}>
-                Não há mais passageiros dentro do veículo. A viagem já pode ser finalizada.
+                {ehIda
+                  ? "Não há mais passageiros dentro do veículo. A chegada ao CMB já pode ser registrada."
+                  : "Não há mais passageiros dentro do veículo. A viagem já pode ser finalizada."}
               </Text>
 
               <TouchableOpacity
@@ -172,7 +180,9 @@ export function DeliveryMode({
                     onPress={() => onAlterarSituacao(aluno.id, "desembarcou")}
                   >
                     <CheckIcon size={18} color="#FFFFFF" weight="bold" />
-                    <Text style={styles.deliverButtonText}>Confirmar entrega</Text>
+                    <Text style={styles.deliverButtonText}>
+                      {ehIda ? "Confirmar chegada" : "Confirmar entrega"}
+                    </Text>
                   </TouchableOpacity>
                 </Card>
               ))}
@@ -209,7 +219,9 @@ export function DeliveryMode({
 
           {alunosDesembarcados.length > 0 && (
             <View>
-              <Text style={[styles.sectionTitle, { color: theme.text }]}>Alunos já entregues</Text>
+              <Text style={[styles.sectionTitle, { color: theme.text }]}>
+                {ehIda ? "Alunos que já chegaram" : "Alunos já entregues"}
+              </Text>
 
               {alunosDesembarcados.map((aluno) => (
                 <Card key={aluno.id} style={styles.deliveredRow}>
@@ -220,7 +232,7 @@ export function DeliveryMode({
                     </Text>
                   </View>
 
-                  <Badge label="Entregue" tone="success" />
+                  <Badge label={ehIda ? "Chegou" : "Entregue"} tone="success" />
                 </Card>
               ))}
             </View>
