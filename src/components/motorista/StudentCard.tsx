@@ -3,7 +3,7 @@ import { StyleSheet, TouchableOpacity, View } from "react-native";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { Text } from "@/components/ui/Text";
-import { BackpackIcon, CheckCircleIcon, WarningCircleIcon } from "@/components/ui/icons";
+import { BackpackIcon, CheckCircleIcon, HouseIcon, WarningCircleIcon } from "@/components/ui/icons";
 import { Radii } from "@/constants/theme";
 import { AlunoMotorista, ConfirmacaoResponsavel, SentidoViagem, SituacaoEmbarque } from "@/domain/types";
 import { useTheme } from "@/hooks/use-theme";
@@ -92,7 +92,7 @@ export function StudentCard({
         <Badge label={textoDaSituacao[aluno.situacao]} tone={toneDaSituacao[aluno.situacao]} />
       </View>
 
-      {permitirAcoes && (
+      {permitirAcoes && aluno.situacao === "aguardando" && (
         <View style={styles.studentActions}>
           <TouchableOpacity
             style={[styles.actionButton, { backgroundColor: theme.successBg }]}
@@ -116,6 +116,18 @@ export function StudentCard({
           >
             <WarningCircleIcon size={15} color={theme.warning} weight="bold" />
             <Text style={[styles.actionButtonText, { color: theme.warning }]}>Não localizado</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {permitirAcoes && aluno.situacao === "embarcou" && (
+        <View style={styles.studentActions}>
+          <TouchableOpacity
+            style={[styles.actionButton, { backgroundColor: theme.infoBg }]}
+            onPress={() => onAlterarSituacao(aluno.id, "desembarcou")}
+          >
+            <HouseIcon size={15} color={theme.info} weight="bold" />
+            <Text style={[styles.actionButtonText, { color: theme.info }]}>Desembarcou</Text>
           </TouchableOpacity>
         </View>
       )}

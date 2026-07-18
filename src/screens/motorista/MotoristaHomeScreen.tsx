@@ -14,9 +14,9 @@ import { ScreenHeader } from "@/components/ui/ScreenHeader";
 import { Text } from "@/components/ui/Text";
 import {
   BellIcon,
-  BusIcon,
   CalendarBlankIcon,
   CheckCircleIcon,
+  HouseIcon,
   UsersThreeIcon,
 } from "@/components/ui/icons";
 import { useAuth } from "@/auth/session-context";
@@ -32,8 +32,6 @@ import { embarqueService } from "@/services/embarque-service";
 import { rosterService } from "@/services/roster-service";
 import { viagemService } from "@/services/viagem-service";
 import { obterHorarioAtual } from "@/utils/datas";
-import { DeliveryMode } from "@/screens/motorista/DeliveryMode";
-import { OperationalMode } from "@/screens/motorista/OperationalMode";
 
 export function MotoristaHomeScreen() {
   const { carregando: carregandoSessao } = useRequireAuth("motorista");
@@ -43,7 +41,7 @@ export function MotoristaHomeScreen() {
   const [viagemAtual, setViagemAtual] = useState<Viagem | null>(null);
   const [alunos, setAlunos] = useState<AlunoMotorista[]>([]);
   const [carregando, setCarregando] = useState(true);
-  const [modoViagem, setModoViagem] = useState(false);
+  const [desembarcandoTodos, setDesembarcandoTodos] = useState(false);
 
   const notificacoes = usePushNotifications();
 
@@ -137,10 +135,6 @@ export function MotoristaHomeScreen() {
             : await viagemService.pausarViagem(viagemAtual);
 
       setViagemAtual(viagemAtualizada);
-
-      if (novoStatus !== "em-andamento") {
-        setModoViagem(false);
-      }
     } catch (erro) {
       alert(erro instanceof Error ? erro.message : "Não foi possível alterar o status da viagem.");
     }
@@ -170,7 +164,6 @@ export function MotoristaHomeScreen() {
     try {
       const viagemFinalizada = await viagemService.finalizarViagem(viagemAtual);
       setViagemAtual(viagemFinalizada);
-      setModoViagem(false);
 
       alert(
         viagemAtual.sentido === "ida"
@@ -179,6 +172,18 @@ export function MotoristaHomeScreen() {
       );
     } catch (erro) {
       alert(erro instanceof Error ? erro.message : "Não foi possível finalizar a viagem.");
+    }
+  }
+
+  async function desembarcarTodos() {
+    setDesembarcandoTodos(true);
+
+    try {
+      await Promise.all(
+        alunosEmbarcados.map((aluno) => alterarSituacao(aluno.id, "desembarcou")),
+      );
+    } finally {
+      setDesembarcandoTodos(false);
     }
   }
 
@@ -202,41 +207,7 @@ export function MotoristaHomeScreen() {
       aluno.situacao === "cancelado",
   ).length;
 
-  const totalRevisitar = alunosConfirmados.filter((aluno) => aluno.situacao === "revisitar").length;
-
-  const totalResolvidos = alunosConfirmados.filter(
-    (aluno) => aluno.situacao !== "aguardando" && aluno.situacao !== "revisitar",
-  ).length;
-
-  // Modo Viagem apresenta os alunos em ordem alfabética, não pela ordem do
-  // trajeto (alunosConfirmados) — o motorista pode embarcar fora da ordem
-  // dos pontos, então a busca do próximo aluno usa essa cópia separada. O
-  // agrupamento por ponto abaixo continua usando alunosConfirmados original.
-  const emOrdemAlfabetica = [...alunosConfirmados].sort((a, b) => a.nome.localeCompare(b.nome));
-
-  const alunoAguardando =
-    emOrdemAlfabetica.find((aluno) => aluno.situacao === "aguardando") ?? null;
-
-  const alunoParaRevisitar =
-    emOrdemAlfabetica.find((aluno) => aluno.situacao === "revisitar") ?? null;
-
-  const alunoAtualModo = alunoAguardando ?? alunoParaRevisitar;
-
-  const alunosParaEntrega = alunosConfirmados.filter(
-    (aluno) => aluno.situacao === "embarcou" || aluno.situacao === "desembarcou",
-  );
-
-  const aindaHaPendenciasDeEmbarque = alunosConfirmados.some(
-    (aluno) => aluno.situacao === "aguardando" || aluno.situacao === "revisitar",
-  );
-
-  const deveAbrirModoEntrega =
-    !aindaHaPendenciasDeEmbarque && alunosParaEntrega.length > 0;
-
-  const progresso =
-    alunosConfirmados.length > 0
-      ? Math.round((totalResolvidos / alunosConfirmados.length) * 100)
-      : 0;
+  const alunosEmbarcados = alunosConfirmados.filter((aluno) => aluno.situacao === "embarcou");
 
   const alunosConfirmadosPorPonto = alunosConfirmados.reduce<Record<string, AlunoMotorista[]>>(
     (grupos, aluno) => {
@@ -253,36 +224,6 @@ export function MotoristaHomeScreen() {
 
   if (carregandoSessao) {
     return null;
-  }
-
-  if (modoViagem && viagemAtual) {
-    if (deveAbrirModoEntrega) {
-      return (
-        <DeliveryMode
-          viagemAtual={viagemAtual}
-          alunosParaEntrega={alunosParaEntrega}
-          onVoltar={() => setModoViagem(false)}
-          onAlterarSituacao={alterarSituacao}
-          onFinalizarViagem={finalizarEmbarque}
-        />
-      );
-    }
-
-    return (
-      <OperationalMode
-        viagemAtual={viagemAtual}
-        alunosConfirmados={alunosConfirmados}
-        alunoAtual={alunoAtualModo}
-        totalResolvidos={totalResolvidos}
-        totalEmbarcados={totalEmbarcados}
-        totalRevisitar={totalRevisitar}
-        totalOcorrencias={totalOcorrencias}
-        progresso={progresso}
-        onVoltar={() => setModoViagem(false)}
-        onAlterarSituacao={alterarSituacao}
-        onFinalizarEmbarque={finalizarEmbarque}
-      />
-    );
   }
 
   return (
@@ -336,17 +277,6 @@ export function MotoristaHomeScreen() {
               icon={BellIcon}
               loading={notificacoes.carregando}
               onPress={notificacoes.alternar}
-            />
-          </View>
-        )}
-
-        {viagemIniciada && (
-          <View style={styles.operationalButtonWrapper}>
-            <Button
-              label="Abrir Modo Viagem"
-              variant="secondary"
-              icon={BusIcon}
-              onPress={() => setModoViagem(true)}
             />
           </View>
         )}
@@ -459,6 +389,16 @@ export function MotoristaHomeScreen() {
                   alert("O aviso de atraso será implementado no módulo de avisos.")
                 }
               />
+
+              {viagemIniciada && alunosEmbarcados.length > 0 && (
+                <Button
+                  label="Desembarcar todos"
+                  variant="secondary"
+                  icon={HouseIcon}
+                  loading={desembarcandoTodos}
+                  onPress={desembarcarTodos}
+                />
+              )}
 
               <Button label="Finalizar embarque" onPress={finalizarEmbarque} />
             </View>
