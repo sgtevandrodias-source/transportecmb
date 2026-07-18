@@ -400,7 +400,7 @@ export function MotoristaHomeScreen() {
                 />
               )}
 
-              <Button label="Finalizar embarque" onPress={finalizarEmbarque} />
+              <Button label="Finalizar viagem" onPress={finalizarEmbarque} />
             </View>
           </>
         )}
