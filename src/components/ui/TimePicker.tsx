@@ -156,13 +156,13 @@ const styles = StyleSheet.create({
   },
   columnsRow: {
     flexDirection: "row",
-    alignItems: "center",
     justifyContent: "center",
     height: 220,
     marginBottom: 18,
   },
   column: {
     flex: 1,
+    height: 220,
   },
   separator: {
     fontSize: 20,
