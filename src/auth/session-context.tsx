@@ -1,4 +1,3 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   createContext,
   useCallback,
@@ -9,28 +8,35 @@ import {
   type ReactNode,
 } from "react";
 
+import { apiClient } from "@/data/api-client";
 import { Perfil, Usuario } from "@/domain/types";
-import { StorageKeys } from "@/data/storage-keys";
-import { responsaveisRepository } from "@/data/repositories/responsaveis.repository";
 
 type Credenciais = {
   email: string;
   senha: string;
 };
 
+type NovaContaGestor = {
+  nome: string;
+  email: string;
+  senha: string;
+  telefone?: string;
+};
+
+type RespostaAuth = {
+  token: string;
+  usuario: Usuario;
+};
+
 type AuthContextValue = {
   usuario: Usuario | null;
   carregando: boolean;
   login: (perfil: Perfil, credenciais: Credenciais) => Promise<Usuario>;
+  criarContaGestor: (dados: NovaContaGestor) => Promise<Usuario>;
   logout: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
-
-const nomePorPerfil: Record<Exclude<Perfil, "responsavel">, string> = {
-  gestor: "Gestor",
-  motorista: "Motorista",
-};
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [usuario, setUsuario] = useState<Usuario | null>(null);
@@ -39,11 +45,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     async function restaurarSessao() {
       try {
-        const salva = await AsyncStorage.getItem(StorageKeys.sessao);
+        const token = await apiClient.restaurarToken();
 
-        if (salva) {
-          setUsuario(JSON.parse(salva) as Usuario);
+        if (!token) {
+          return;
         }
+
+        const resposta = await apiClient.get<{ usuario: Usuario }>("/api/auth/me");
+        setUsuario(resposta.usuario);
+      } catch {
+        await apiClient.definirToken(null);
       } finally {
         setCarregando(false);
       }
@@ -52,58 +63,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     restaurarSessao();
   }, []);
 
-  const login = useCallback(
-    async (perfil: Perfil, credenciais: Credenciais) => {
-      if (!credenciais.email.trim() || !credenciais.senha.trim()) {
-        throw new Error("Preencha o e-mail e a senha.");
-      }
+  const login = useCallback(async (perfil: Perfil, credenciais: Credenciais) => {
+    const resposta = await apiClient.post<RespostaAuth>("/api/auth/login", {
+      perfil,
+      email: credenciais.email,
+      senha: credenciais.senha,
+    });
 
-      const emailNormalizado = credenciais.email.trim().toLowerCase();
+    await apiClient.definirToken(resposta.token);
+    setUsuario(resposta.usuario);
 
-      let usuarioAutenticado: Usuario;
+    return resposta.usuario;
+  }, []);
 
-      if (perfil === "responsavel") {
-        const responsavel = await responsaveisRepository.buscarPorEmail(
-          emailNormalizado,
-        );
+  const criarContaGestor = useCallback(async (dados: NovaContaGestor) => {
+    const resposta = await apiClient.post<RespostaAuth>("/api/auth/signup", dados);
 
-        if (!responsavel) {
-          throw new Error(
-            "E-mail não encontrado no cadastro de responsáveis.",
-          );
-        }
+    await apiClient.definirToken(resposta.token);
+    setUsuario(resposta.usuario);
 
-        usuarioAutenticado = responsavel;
-      } else {
-        usuarioAutenticado = {
-          id: 0,
-          nome: nomePorPerfil[perfil],
-          email: emailNormalizado,
-          telefone: "",
-          perfil,
-        };
-      }
-
-      await AsyncStorage.setItem(
-        StorageKeys.sessao,
-        JSON.stringify(usuarioAutenticado),
-      );
-
-      setUsuario(usuarioAutenticado);
-
-      return usuarioAutenticado;
-    },
-    [],
-  );
+    return resposta.usuario;
+  }, []);
 
   const logout = useCallback(async () => {
-    await AsyncStorage.removeItem(StorageKeys.sessao);
+    try {
+      await apiClient.post("/api/auth/logout");
+    } catch {
+      // segue limpando a sessão local mesmo se a chamada falhar (ex.: sem conexão)
+    }
+
+    await apiClient.definirToken(null);
     setUsuario(null);
   }, []);
 
   const value = useMemo(
-    () => ({ usuario, carregando, login, logout }),
-    [usuario, carregando, login, logout],
+    () => ({ usuario, carregando, login, criarContaGestor, logout }),
+    [usuario, carregando, login, criarContaGestor, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

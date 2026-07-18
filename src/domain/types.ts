@@ -6,10 +6,16 @@ export type Usuario = {
   email: string;
   telefone: string;
   perfil: Perfil;
+  /** Só usado ao criar/atualizar a conta — a API nunca devolve senha. */
+  senha?: string;
 };
 
 export type Responsavel = Usuario & {
   perfil: "responsavel";
+};
+
+export type Motorista = Usuario & {
+  perfil: "motorista";
 };
 
 export type Aluno = {

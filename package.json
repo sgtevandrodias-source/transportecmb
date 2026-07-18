@@ -33,6 +33,7 @@
     "react-native-worklets": "0.10.0"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260717.1",
     "@types/react": "~19.2.2",
     "eslint": "^9.0.0",
     "eslint-config-expo": "~57.0.0",
@@ -44,7 +45,11 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "db:migrate:local": "wrangler d1 migrations apply rota-cmb-db --local",
+    "db:migrate:remote": "wrangler d1 migrations apply rota-cmb-db --remote",
+    "pages:dev": "expo export -p web --output-dir dist && wrangler pages dev dist",
+    "deploy": "expo export -p web --output-dir dist && wrangler pages deploy dist"
   },
   "private": true
 }

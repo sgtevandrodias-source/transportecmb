@@ -26,14 +26,17 @@ const nomePorPerfil: Record<Perfil, string> = {
 
 export function LoginScreen() {
   const { perfil } = useLocalSearchParams<{ perfil?: Perfil }>();
-  const { login } = useAuth();
+  const { login, criarContaGestor } = useAuth();
   const theme = useTheme();
 
+  const [criandoConta, setCriandoConta] = useState(false);
+  const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [enviando, setEnviando] = useState(false);
 
   const perfilFormatado = perfil ? nomePorPerfil[perfil] : "Usuário";
+  const permiteCriarConta = perfil === "gestor";
 
   async function entrar() {
     if (!perfil) {
@@ -53,20 +56,39 @@ export function LoginScreen() {
     }
   }
 
+  async function criarConta() {
+    setEnviando(true);
+
+    try {
+      await criarContaGestor({ nome, email, senha });
+      router.replace("/gestor");
+    } catch (erro) {
+      alert(erro instanceof Error ? erro.message : "Não foi possível criar a conta.");
+    } finally {
+      setEnviando(false);
+    }
+  }
+
   return (
     <ScreenContainer keyboardAvoiding>
       <ScreenHeader
         variant="form"
-        title={`Acesso do ${perfilFormatado}`}
+        title={criandoConta ? "Criar conta de gestor" : `Acesso do ${perfilFormatado}`}
         onBack={() => router.back()}
       />
 
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={[styles.description, { color: theme.textSecondary }]}>
-          Digite seus dados para acessar o transporte escolar.
+          {criandoConta
+            ? "É a primeira vez usando o Rota CMB? Crie a conta principal do gestor."
+            : "Digite seus dados para acessar o transporte escolar."}
         </Text>
 
         <Card>
+          {criandoConta && (
+            <FormField label="Nome" placeholder="Digite seu nome" value={nome} onChangeText={setNome} />
+          )}
+
           <FormField
             label="E-mail"
             placeholder="Digite seu e-mail"
@@ -85,13 +107,27 @@ export function LoginScreen() {
             secureTextEntry
           />
 
-          <Button label="Entrar" onPress={entrar} loading={enviando} />
+          <Button
+            label={criandoConta ? "Criar conta" : "Entrar"}
+            onPress={criandoConta ? criarConta : entrar}
+            loading={enviando}
+          />
 
-          <TouchableOpacity>
-            <Text style={[styles.forgotPassword, { color: theme.primary }]}>
-              Esqueci minha senha
-            </Text>
-          </TouchableOpacity>
+          {!criandoConta && (
+            <TouchableOpacity>
+              <Text style={[styles.forgotPassword, { color: theme.primary }]}>
+                Esqueci minha senha
+              </Text>
+            </TouchableOpacity>
+          )}
+
+          {permiteCriarConta && (
+            <TouchableOpacity onPress={() => setCriandoConta((atual) => !atual)}>
+              <Text style={[styles.forgotPassword, { color: theme.primary }]}>
+                {criandoConta ? "Já tenho conta — entrar" : "Primeira vez? Criar conta de gestor"}
+              </Text>
+            </TouchableOpacity>
+          )}
         </Card>
 
         <Text style={[styles.footer, { color: theme.textMuted }]}>

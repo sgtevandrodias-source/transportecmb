@@ -1,4 +1,4 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { apiClient } from "@/data/api-client";
 
 export type TipoEventoRota =
   | "viagem_criada"
@@ -33,14 +33,6 @@ export type EventoRota = {
   detalhes?: Record<string, unknown>;
 };
 
-const CHAVE_EVENTOS = "@rota_cmb_eventos";
-
-function gerarIdEvento() {
-  return `${Date.now()}-${Math.random()
-    .toString(36)
-    .slice(2, 10)}`;
-}
-
 function obterHorarioAtual() {
   return new Date().toLocaleTimeString("pt-BR", {
     hour: "2-digit",
@@ -48,132 +40,39 @@ function obterHorarioAtual() {
   });
 }
 
-export async function listarEventosRota(): Promise<
-  EventoRota[]
-> {
-  try {
-    const eventosSalvos =
-      await AsyncStorage.getItem(CHAVE_EVENTOS);
-
-    if (!eventosSalvos) {
-      return [];
-    }
-
-    return JSON.parse(eventosSalvos) as EventoRota[];
-  } catch (erro) {
-    console.log(
-      "Erro ao listar eventos da rota:",
-      erro,
-    );
-
-    return [];
-  }
-}
-
 export async function registrarEventoRota(
-  evento: Omit<
-    EventoRota,
-    "id" | "criadoEm" | "horario"
-  > & {
+  evento: Omit<EventoRota, "id" | "criadoEm" | "horario"> & {
     horario?: string;
   },
 ): Promise<EventoRota> {
-  const eventosAtuais =
-    await listarEventosRota();
-
-  const novoEvento: EventoRota = {
+  return apiClient.post<EventoRota>("/api/eventos", {
     ...evento,
-    id: gerarIdEvento(),
-    criadoEm: new Date().toISOString(),
-    horario:
-      evento.horario ?? obterHorarioAtual(),
-  };
-
-  const listaAtualizada = [
-    ...eventosAtuais,
-    novoEvento,
-  ];
-
-  await AsyncStorage.setItem(
-    CHAVE_EVENTOS,
-    JSON.stringify(listaAtualizada),
-  );
-
-  return novoEvento;
+    horario: evento.horario ?? obterHorarioAtual(),
+  });
 }
 
-export async function listarEventosPorViagem(
-  viagemId: number,
-): Promise<EventoRota[]> {
-  const eventos = await listarEventosRota();
-
-  return eventos
-    .filter(
-      (evento) =>
-        evento.viagemId === viagemId,
-    )
-    .sort(
-      (a, b) =>
-        new Date(a.criadoEm).getTime() -
-        new Date(b.criadoEm).getTime(),
-    );
+export async function listarEventosPorViagem(viagemId: number): Promise<EventoRota[]> {
+  return apiClient.get<EventoRota[]>("/api/eventos", { viagemId: String(viagemId) });
 }
 
-export async function listarEventosPorAluno(
-  alunoId: number,
-): Promise<EventoRota[]> {
-  const eventos = await listarEventosRota();
-
-  return eventos
-    .filter(
-      (evento) =>
-        evento.alunoId === alunoId,
-    )
-    .sort(
-      (a, b) =>
-        new Date(a.criadoEm).getTime() -
-        new Date(b.criadoEm).getTime(),
-    );
+export async function listarEventosPorAluno(alunoId: number): Promise<EventoRota[]> {
+  return apiClient.get<EventoRota[]>("/api/eventos", { alunoId: String(alunoId) });
 }
 
 export async function listarEventosDoAlunoNaViagem(
   viagemId: number,
   alunoId: number,
 ): Promise<EventoRota[]> {
-  const eventos = await listarEventosRota();
-
-  return eventos
-    .filter(
-      (evento) =>
-        evento.viagemId === viagemId &&
-        evento.alunoId === alunoId,
-    )
-    .sort(
-      (a, b) =>
-        new Date(a.criadoEm).getTime() -
-        new Date(b.criadoEm).getTime(),
-    );
+  return apiClient.get<EventoRota[]>("/api/eventos", {
+    viagemId: String(viagemId),
+    alunoId: String(alunoId),
+  });
 }
 
 export async function obterUltimoEventoDoAlunoNaViagem(
   viagemId: number,
   alunoId: number,
 ): Promise<EventoRota | null> {
-  const eventos =
-    await listarEventosDoAlunoNaViagem(
-      viagemId,
-      alunoId,
-    );
-
-  if (eventos.length === 0) {
-    return null;
-  }
-
-  return eventos[eventos.length - 1];
-}
-
-export async function limparEventosRota() {
-  await AsyncStorage.removeItem(
-    CHAVE_EVENTOS,
-  );
+  const eventos = await listarEventosDoAlunoNaViagem(viagemId, alunoId);
+  return eventos.length > 0 ? eventos[eventos.length - 1] : null;
 }

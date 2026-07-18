@@ -1,9 +1,8 @@
 import { SentidoViagem, Viagem } from "@/domain/types";
-import { StorageKeys } from "@/data/storage-keys";
-import { createListRepository } from "@/data/repositories/create-list-repository";
+import { createApiListRepository } from "@/data/repositories/create-api-list-repository";
 import { obterDataHoraViagem } from "@/utils/datas";
 
-const base = createListRepository<Viagem>(StorageKeys.viagens);
+const base = createApiListRepository<Viagem>("/api/viagens");
 
 function ordenarPorDataHora(lista: Viagem[]): Viagem[] {
   return [...lista].sort(

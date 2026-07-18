@@ -1,18 +1,16 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
-
+import { apiClient } from "@/data/api-client";
 import { ConfirmacaoResponsavel, SentidoViagem } from "@/domain/types";
-import { StorageKeys } from "@/data/storage-keys";
 
 async function obter(
   sentido: SentidoViagem,
   viagemId: number,
   alunoId: number,
 ): Promise<ConfirmacaoResponsavel> {
-  const salva = await AsyncStorage.getItem(
-    StorageKeys.confirmacao(sentido, viagemId, alunoId),
+  const registro = await apiClient.get<{ confirmacao: ConfirmacaoResponsavel } | null>(
+    `/api/confirmacoes/${sentido}/${viagemId}/${alunoId}`,
   );
 
-  return (salva as ConfirmacaoResponsavel) ?? "aguardando";
+  return registro?.confirmacao ?? "aguardando";
 }
 
 async function salvar(
@@ -21,10 +19,7 @@ async function salvar(
   alunoId: number,
   confirmacao: ConfirmacaoResponsavel,
 ): Promise<void> {
-  await AsyncStorage.setItem(
-    StorageKeys.confirmacao(sentido, viagemId, alunoId),
-    confirmacao,
-  );
+  await apiClient.put(`/api/confirmacoes/${sentido}/${viagemId}/${alunoId}`, { confirmacao });
 }
 
 export const confirmacoesRepository = { obter, salvar };

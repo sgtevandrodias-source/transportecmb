@@ -1,12 +1,7 @@
 import { Ponto } from "@/domain/types";
-import { StorageKeys } from "@/data/storage-keys";
-import { createListRepository } from "@/data/repositories/create-list-repository";
+import { createApiListRepository } from "@/data/repositories/create-api-list-repository";
 
-const base = createListRepository<Ponto>(StorageKeys.pontos);
+const base = createApiListRepository<Ponto>("/api/pontos");
 
-async function listOrdenados(): Promise<Ponto[]> {
-  const lista = await base.list();
-  return [...lista].sort((a, b) => a.ordem - b.ordem);
-}
-
-export const pontosRepository = { ...base, listOrdenados };
+// A API já devolve a lista ordenada por `ordem`.
+export const pontosRepository = { ...base, listOrdenados: base.list };

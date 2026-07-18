@@ -1,0 +1,9 @@
+name = "rota-cmb"
+pages_build_output_dir = "dist"
+compatibility_date = "2026-07-17"
+compatibility_flags = ["nodejs_compat"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "rota-cmb-db"
+database_id = "b1304ea1-ef95-47ad-a265-851807c16cdb"

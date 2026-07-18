@@ -22,7 +22,12 @@ SplashScreen.preventAutoHideAsync();
 export default function RootLayout() {
   const colorScheme = useColorScheme();
 
-  const [fontsLoaded] = useFonts({
+  // Só usado para o preload das fontes começar cedo; não gateamos a árvore
+  // nele — como o valor difere entre a renderização estática (servidor) e o
+  // cliente, condicionar a montagem a esse booleano causa erro de hidratação
+  // (#418) no build exportado. O AnimatedSplashOverlay já cobre a tela
+  // enquanto as fontes carregam.
+  useFonts({
     PlusJakartaSans_600SemiBold,
     PlusJakartaSans_700Bold,
     PlusJakartaSans_800ExtraBold,
@@ -36,15 +41,13 @@ export default function RootLayout() {
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
       <AnimatedSplashOverlay />
 
-      {fontsLoaded && (
-        <AuthProvider>
-          <Stack
-            screenOptions={{
-              headerShown: false,
-            }}
-          />
-        </AuthProvider>
-      )}
+      <AuthProvider>
+        <Stack
+          screenOptions={{
+            headerShown: false,
+          }}
+        />
+      </AuthProvider>
     </ThemeProvider>
   );
 }

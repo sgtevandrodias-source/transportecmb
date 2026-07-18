@@ -1,0 +1,5 @@
+# SPA: qualquer rota que não seja um arquivo estático nem /api/* cai no
+# index.html, para o expo-router assumir a navegação no cliente. Rotas
+# /api/* nunca chegam aqui — o Cloudflare Pages resolve as Functions antes
+# de aplicar este arquivo.
+/*   /index.html   200

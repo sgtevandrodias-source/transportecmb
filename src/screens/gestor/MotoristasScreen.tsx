@@ -9,20 +9,20 @@ import { FormField } from "@/components/ui/FormField";
 import { ScreenContainer } from "@/components/ui/ScreenContainer";
 import { ScreenHeader } from "@/components/ui/ScreenHeader";
 import { Text } from "@/components/ui/Text";
-import { UserCircleIcon } from "@/components/ui/icons";
+import { SteeringWheelIcon } from "@/components/ui/icons";
 import { useRequireAuth } from "@/auth/with-auth-guard";
 import { Radii } from "@/constants/theme";
-import { Responsavel } from "@/domain/types";
-import { useResponsaveis } from "@/hooks/use-responsaveis";
+import { Motorista } from "@/domain/types";
+import { useMotoristas } from "@/hooks/use-motoristas";
 import { useTheme } from "@/hooks/use-theme";
 
-export function ResponsaveisScreen() {
+export function MotoristasScreen() {
   const { carregando: carregandoSessao } = useRequireAuth("gestor");
   const theme = useTheme();
-  const { items: responsaveis, create, update, remove } = useResponsaveis();
+  const { items: motoristas, create, update, remove } = useMotoristas();
 
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
-  const [responsavelEmEdicao, setResponsavelEmEdicao] = useState<number | null>(null);
+  const [motoristaEmEdicao, setMotoristaEmEdicao] = useState<number | null>(null);
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
   const [telefone, setTelefone] = useState("");
@@ -33,40 +33,39 @@ export function ResponsaveisScreen() {
     setEmail("");
     setTelefone("");
     setSenha("");
-    setResponsavelEmEdicao(null);
+    setMotoristaEmEdicao(null);
     setMostrarFormulario(false);
   }
 
-  function editarResponsavel(responsavel: Responsavel) {
-    setResponsavelEmEdicao(responsavel.id);
-    setNome(responsavel.nome);
-    setEmail(responsavel.email);
-    setTelefone(responsavel.telefone);
+  function editarMotorista(motorista: Motorista) {
+    setMotoristaEmEdicao(motorista.id);
+    setNome(motorista.nome);
+    setEmail(motorista.email);
+    setTelefone(motorista.telefone);
     setSenha("");
     setMostrarFormulario(true);
   }
 
-  async function salvarResponsavel() {
+  async function salvarMotorista() {
     if (!nome.trim() || !email.trim() || !telefone.trim()) {
       alert("Preencha todos os campos.");
       return;
     }
 
-    if (responsavelEmEdicao === null && !senha.trim()) {
-      alert("Defina uma senha para o responsável acessar o app.");
+    if (motoristaEmEdicao === null && !senha.trim()) {
+      alert("Defina uma senha para o motorista acessar o app.");
       return;
     }
 
     const emailNormalizado = email.trim().toLowerCase();
 
-    const jaCadastrado = responsaveis.some(
-      (responsavel) =>
-        responsavel.id !== responsavelEmEdicao &&
-        responsavel.email.toLowerCase() === emailNormalizado,
+    const jaCadastrado = motoristas.some(
+      (motorista) =>
+        motorista.id !== motoristaEmEdicao && motorista.email.toLowerCase() === emailNormalizado,
     );
 
     if (jaCadastrado) {
-      alert("Já existe um responsável com este e-mail.");
+      alert("Já existe um motorista com este e-mail.");
       return;
     }
 
@@ -75,26 +74,26 @@ export function ResponsaveisScreen() {
         nome: nome.trim(),
         email: emailNormalizado,
         telefone: telefone.trim(),
-        perfil: "responsavel" as const,
+        perfil: "motorista" as const,
         ...(senha.trim() ? { senha: senha.trim() } : {}),
       };
 
-      if (responsavelEmEdicao !== null) {
-        await update(responsavelEmEdicao, dados);
+      if (motoristaEmEdicao !== null) {
+        await update(motoristaEmEdicao, dados);
       } else {
         await create(dados);
       }
 
       alert(
-        responsavelEmEdicao !== null
-          ? "Responsável atualizado com sucesso."
-          : "Responsável cadastrado com sucesso.",
+        motoristaEmEdicao !== null
+          ? "Motorista atualizado com sucesso."
+          : "Motorista cadastrado com sucesso.",
       );
 
       limparFormulario();
     } catch (erro) {
-      console.log("Erro ao salvar responsável:", erro);
-      alert("Não foi possível salvar o responsável.");
+      console.log("Erro ao salvar motorista:", erro);
+      alert(erro instanceof Error ? erro.message : "Não foi possível salvar o motorista.");
     }
   }
 
@@ -106,24 +105,22 @@ export function ResponsaveisScreen() {
     <ScreenContainer>
       <ScreenHeader
         variant="form"
-        title="Responsáveis"
+        title="Motoristas"
         subtitle="Rota CMB - Tavares Transportes"
         onBack={() => router.back()}
       />
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Card style={styles.summaryCard}>
-          <Text style={[styles.summaryNumber, { color: theme.primary }]}>
-            {responsaveis.length}
-          </Text>
+          <Text style={[styles.summaryNumber, { color: theme.primary }]}>{motoristas.length}</Text>
           <Text style={[styles.summaryText, { color: theme.textSecondary }]}>
-            Responsáveis cadastrados
+            Motoristas cadastrados
           </Text>
         </Card>
 
         <View style={styles.addButtonWrapper}>
           <Button
-            label={mostrarFormulario ? "Cancelar cadastro" : "+ Cadastrar responsável"}
+            label={mostrarFormulario ? "Cancelar cadastro" : "+ Cadastrar motorista"}
             variant={mostrarFormulario ? "secondary" : "primary"}
             onPress={() => (mostrarFormulario ? limparFormulario() : setMostrarFormulario(true))}
           />
@@ -132,7 +129,7 @@ export function ResponsaveisScreen() {
         {mostrarFormulario && (
           <Card style={styles.formCard}>
             <Text style={[styles.formTitle, { color: theme.text }]}>
-              {responsavelEmEdicao !== null ? "Editar responsável" : "Novo responsável"}
+              {motoristaEmEdicao !== null ? "Editar motorista" : "Novo motorista"}
             </Text>
 
             <FormField label="Nome completo" placeholder="Digite o nome" value={nome} onChangeText={setNome} />
@@ -156,9 +153,9 @@ export function ResponsaveisScreen() {
             />
 
             <FormField
-              label={responsavelEmEdicao !== null ? "Nova senha (opcional)" : "Senha"}
+              label={motoristaEmEdicao !== null ? "Nova senha (opcional)" : "Senha"}
               placeholder={
-                responsavelEmEdicao !== null ? "Deixe em branco para manter a atual" : "Defina uma senha"
+                motoristaEmEdicao !== null ? "Deixe em branco para manter a atual" : "Defina uma senha"
               }
               value={senha}
               onChangeText={setSenha}
@@ -166,62 +163,52 @@ export function ResponsaveisScreen() {
             />
 
             <Button
-              label={responsavelEmEdicao !== null ? "Salvar alterações" : "Salvar responsável"}
-              onPress={salvarResponsavel}
+              label={motoristaEmEdicao !== null ? "Salvar alterações" : "Salvar motorista"}
+              onPress={salvarMotorista}
             />
           </Card>
         )}
 
         <View style={styles.titleRow}>
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>Lista de responsáveis</Text>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>Lista de motoristas</Text>
           <Text style={[styles.counterText, { color: theme.textMuted }]}>
-            {responsaveis.length} cadastrados
+            {motoristas.length} cadastrados
           </Text>
         </View>
 
-        {responsaveis.length === 0 ? (
+        {motoristas.length === 0 ? (
           <EmptyState
             tone="warning"
-            icon={UserCircleIcon}
-            title="Nenhum responsável cadastrado"
-            message="Cadastre o primeiro responsável para depois vinculá-lo a um aluno."
+            icon={SteeringWheelIcon}
+            title="Nenhum motorista cadastrado"
+            message="Cadastre o primeiro motorista para ele acessar o modo viagem."
           />
         ) : (
-          responsaveis.map((responsavel) => (
-            <Card key={responsavel.id} style={styles.responsibleCard}>
-              <View style={styles.responsibleHeader}>
-                <View style={[styles.responsibleIcon, { backgroundColor: theme.infoBg }]}>
-                  <UserCircleIcon size={22} color={theme.primary} weight="bold" />
+          motoristas.map((motorista) => (
+            <Card key={motorista.id} style={styles.driverCard}>
+              <View style={styles.driverHeader}>
+                <View style={[styles.driverIcon, { backgroundColor: theme.infoBg }]}>
+                  <SteeringWheelIcon size={22} color={theme.primary} weight="bold" />
                 </View>
 
-                <View style={styles.responsibleTextArea}>
-                  <Text style={[styles.responsibleName, { color: theme.text }]}>
-                    {responsavel.nome}
+                <View style={styles.driverTextArea}>
+                  <Text style={[styles.driverName, { color: theme.text }]}>{motorista.nome}</Text>
+                  <Text style={[styles.driverInfo, { color: theme.textSecondary }]}>
+                    {motorista.email}
                   </Text>
-                  <Text style={[styles.responsibleInfo, { color: theme.textSecondary }]}>
-                    {responsavel.email}
-                  </Text>
-                  <Text style={[styles.responsibleInfo, { color: theme.textSecondary }]}>
-                    {responsavel.telefone}
+                  <Text style={[styles.driverInfo, { color: theme.textSecondary }]}>
+                    {motorista.telefone}
                   </Text>
                 </View>
               </View>
 
               <View style={styles.actions}>
                 <View style={styles.actionButton}>
-                  <Button
-                    label="Editar"
-                    variant="secondary"
-                    onPress={() => editarResponsavel(responsavel)}
-                  />
+                  <Button label="Editar" variant="secondary" onPress={() => editarMotorista(motorista)} />
                 </View>
 
                 <View style={styles.actionButton}>
-                  <Button
-                    label="Remover"
-                    variant="danger"
-                    onPress={() => remove(responsavel.id)}
-                  />
+                  <Button label="Remover" variant="danger" onPress={() => remove(motorista.id)} />
                 </View>
               </View>
             </Card>
@@ -273,14 +260,14 @@ const styles = StyleSheet.create({
   counterText: {
     fontSize: 13,
   },
-  responsibleCard: {
+  driverCard: {
     marginBottom: 14,
   },
-  responsibleHeader: {
+  driverHeader: {
     flexDirection: "row",
     alignItems: "center",
   },
-  responsibleIcon: {
+  driverIcon: {
     width: 44,
     height: 44,
     borderRadius: Radii.small,
@@ -288,14 +275,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginRight: 13,
   },
-  responsibleTextArea: {
+  driverTextArea: {
     flex: 1,
   },
-  responsibleName: {
+  driverName: {
     fontSize: 18,
     fontWeight: "bold",
   },
-  responsibleInfo: {
+  driverInfo: {
     fontSize: 13,
     marginTop: 4,
   },

@@ -1,7 +1,4 @@
 import { Aluno } from "@/domain/types";
-import { StorageKeys } from "@/data/storage-keys";
-import { createListRepository } from "@/data/repositories/create-list-repository";
+import { createApiListRepository } from "@/data/repositories/create-api-list-repository";
 
-const alunosRepository = createListRepository<Aluno>(StorageKeys.alunos);
-
-export { alunosRepository };
+export const alunosRepository = createApiListRepository<Aluno>("/api/alunos");
