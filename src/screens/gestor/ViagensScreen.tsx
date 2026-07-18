@@ -6,12 +6,14 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { FormField } from "@/components/ui/FormField";
+import { OptionRow } from "@/components/ui/OptionRow";
 import { ScreenContainer } from "@/components/ui/ScreenContainer";
 import { ScreenHeader } from "@/components/ui/ScreenHeader";
 import { Text } from "@/components/ui/Text";
 import { BuildingsIcon, BusIcon } from "@/components/ui/icons";
 import { useRequireAuth } from "@/auth/with-auth-guard";
 import { Radii } from "@/constants/theme";
+import { TURNOS } from "@/constants/opcoes";
 import { podeTransicionarViagem } from "@/domain/state-machines";
 import { SentidoViagem, Viagem } from "@/domain/types";
 import { useViagens } from "@/hooks/use-viagens";
@@ -185,7 +187,9 @@ export function ViagensScreen() {
               ))}
             </View>
 
-            <FormField label="Turno" placeholder="Exemplo: Manhã" value={turno} onChangeText={setTurno} />
+            <Text style={[styles.label, { color: theme.text }]}>Turno</Text>
+            <OptionRow options={TURNOS} value={turno} onChange={setTurno} />
+
             <FormField label="Horário" placeholder="Exemplo: 06:30" value={horario} onChangeText={setHorario} />
             <FormField
               label="Motorista"

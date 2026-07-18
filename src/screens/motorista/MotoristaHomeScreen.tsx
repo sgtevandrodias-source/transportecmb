@@ -25,6 +25,8 @@ import { AlunoMotorista, SituacaoEmbarque, Viagem } from "@/domain/types";
 import { alunosRepository } from "@/data/repositories/alunos.repository";
 import { pontosRepository } from "@/data/repositories/pontos.repository";
 import { viagensRepository } from "@/data/repositories/viagens.repository";
+import { usePolling } from "@/hooks/use-polling";
+import { usePushNotifications } from "@/hooks/use-push-notifications";
 import { useTheme } from "@/hooks/use-theme";
 import { embarqueService } from "@/services/embarque-service";
 import { rosterService } from "@/services/roster-service";
@@ -43,9 +45,13 @@ export function MotoristaHomeScreen() {
   const [carregando, setCarregando] = useState(true);
   const [modoViagem, setModoViagem] = useState(false);
 
-  const carregarDados = useCallback(async () => {
+  const notificacoes = usePushNotifications();
+
+  const carregarDados = useCallback(async (mostrarCarregando = true) => {
     try {
-      setCarregando(true);
+      if (mostrarCarregando) {
+        setCarregando(true);
+      }
 
       const [todasViagens, todosAlunos, pontos] = await Promise.all([
         viagensRepository.list(),
@@ -64,9 +70,13 @@ export function MotoristaHomeScreen() {
       setAlunos(await rosterService.montarRoster(viagemDisponivel, todosAlunos, pontos));
     } catch (erro) {
       console.log("Erro ao carregar dados do motorista:", erro);
-      alert("Não foi possível carregar a lista de passageiros.");
+      if (mostrarCarregando) {
+        alert("Não foi possível carregar a lista de passageiros.");
+      }
     } finally {
-      setCarregando(false);
+      if (mostrarCarregando) {
+        setCarregando(false);
+      }
     }
   }, []);
 
@@ -74,6 +84,11 @@ export function MotoristaHomeScreen() {
     useCallback(() => {
       carregarDados();
     }, [carregarDados]),
+  );
+
+  usePolling(
+    useCallback(() => carregarDados(false), [carregarDados]),
+    10000,
   );
 
   async function alterarSituacao(alunoId: number, novaSituacao: SituacaoEmbarque) {
@@ -307,6 +322,18 @@ export function MotoristaHomeScreen() {
           />
         </View>
 
+        {notificacoes.suportado && (
+          <View style={styles.operationalButtonWrapper}>
+            <Button
+              label={notificacoes.ativas ? "Notificações ativadas" : "Ativar notificações"}
+              variant="secondary"
+              icon={BellIcon}
+              loading={notificacoes.carregando}
+              onPress={notificacoes.alternar}
+            />
+          </View>
+        )}
+
         {viagemIniciada && (
           <View style={styles.operationalButtonWrapper}>
             <Button
@@ -326,6 +353,13 @@ export function MotoristaHomeScreen() {
             icon={CalendarBlankIcon}
             title="Nenhuma viagem disponível"
             message="O gestor precisa cadastrar uma viagem programada."
+          />
+        ) : alunos.length === 0 ? (
+          <EmptyState
+            tone="warning"
+            icon={UsersThreeIcon}
+            title="Nenhum aluno para o turno desta viagem"
+            message={`Não há alunos cadastrados no turno "${viagemAtual.turno}". Confira o turno da viagem e o turno dos alunos no cadastro.`}
           />
         ) : (
           <>

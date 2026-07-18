@@ -6,12 +6,14 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { FormField } from "@/components/ui/FormField";
+import { OptionRow } from "@/components/ui/OptionRow";
 import { ScreenContainer } from "@/components/ui/ScreenContainer";
 import { ScreenHeader } from "@/components/ui/ScreenHeader";
 import { Text } from "@/components/ui/Text";
 import { BackpackIcon, MapPinIcon, UserCircleIcon } from "@/components/ui/icons";
 import { useRequireAuth } from "@/auth/with-auth-guard";
 import { Radii } from "@/constants/theme";
+import { TURNOS } from "@/constants/opcoes";
 import { Aluno } from "@/domain/types";
 import { useAlunos } from "@/hooks/use-alunos";
 import { usePontos } from "@/hooks/use-pontos";
@@ -125,7 +127,9 @@ export function AlunosScreen() {
 
             <FormField label="Nome do aluno" placeholder="Digite o nome" value={nome} onChangeText={setNome} />
             <FormField label="Série" placeholder="Exemplo: 7º ano" value={serie} onChangeText={setSerie} />
-            <FormField label="Turno" placeholder="Exemplo: Manhã" value={turno} onChangeText={setTurno} />
+
+            <Text style={[styles.label, { color: theme.text }]}>Turno</Text>
+            <OptionRow options={TURNOS} value={turno} onChange={setTurno} />
 
             <Text style={[styles.label, { color: theme.text }]}>Ponto de embarque</Text>
 

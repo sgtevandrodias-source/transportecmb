@@ -1,5 +1,6 @@
 import type { Env } from "../../_lib/env";
 import { erro, json } from "../../_lib/http";
+import { enviarPushParaUsuario } from "../../_lib/push";
 
 type RegistroEmbarque = {
   id: number;
@@ -41,5 +42,32 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     .bind(viagemId, corpo.alunoId, corpo.situacao, corpo.horarioSituacao ?? null)
     .run();
 
+  if (corpo.situacao === "embarcou" || corpo.situacao === "desembarcou") {
+    context.waitUntil(notificarResponsavel(context.env, corpo.alunoId, corpo.situacao));
+  }
+
   return json(await listar(context.env, viagemId));
 };
+
+async function notificarResponsavel(
+  env: Env,
+  alunoId: number,
+  situacao: "embarcou" | "desembarcou",
+): Promise<void> {
+  const aluno = await env.DB.prepare(
+    "SELECT nome, responsavel_id as responsavelId FROM alunos WHERE id = ?",
+  )
+    .bind(alunoId)
+    .first<{ nome: string; responsavelId: number | null }>();
+
+  if (!aluno?.responsavelId) {
+    return;
+  }
+
+  const acao = situacao === "embarcou" ? "embarcou no ônibus" : "desembarcou do ônibus";
+
+  await enviarPushParaUsuario(env, aluno.responsavelId, {
+    titulo: "Rota CMB",
+    corpo: `${aluno.nome} ${acao}.`,
+  });
+}

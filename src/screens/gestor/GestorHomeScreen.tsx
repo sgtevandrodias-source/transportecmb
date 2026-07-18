@@ -1,13 +1,15 @@
 import { router } from "expo-router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 
 import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { ScreenContainer } from "@/components/ui/ScreenContainer";
 import { ScreenHeader } from "@/components/ui/ScreenHeader";
 import { Text } from "@/components/ui/Text";
 import {
+  BellIcon,
   BusIcon,
   CheckCircleIcon,
   HourglassIcon,
@@ -23,7 +25,9 @@ import { useRequireAuth } from "@/auth/with-auth-guard";
 import { Radii } from "@/constants/theme";
 import { AlunoMotorista, Viagem } from "@/domain/types";
 import { useAlunos } from "@/hooks/use-alunos";
+import { usePolling } from "@/hooks/use-polling";
 import { usePontos } from "@/hooks/use-pontos";
+import { usePushNotifications } from "@/hooks/use-push-notifications";
 import { useViagens } from "@/hooks/use-viagens";
 import { rosterService } from "@/services/roster-service";
 import { viagensRepository } from "@/data/repositories/viagens.repository";
@@ -62,12 +66,23 @@ export function GestorHomeScreen() {
   const { logout } = useAuth();
   const theme = useTheme();
 
-  const { items: alunos } = useAlunos();
-  const { items: pontos } = usePontos();
-  const { items: viagens } = useViagens();
+  const { items: alunos, refetch: refetchAlunos } = useAlunos();
+  const { items: pontos, refetch: refetchPontos } = usePontos();
+  const { items: viagens, refetch: refetchViagens } = useViagens();
 
   const [viagemDestaque, setViagemDestaque] = useState<Viagem | null>(null);
   const [roster, setRoster] = useState<AlunoMotorista[]>([]);
+
+  const notificacoes = usePushNotifications();
+
+  usePolling(
+    useCallback(() => {
+      refetchAlunos();
+      refetchPontos();
+      refetchViagens();
+    }, [refetchAlunos, refetchPontos, refetchViagens]),
+    10000,
+  );
 
   useEffect(() => {
     async function calcularDestaque() {
@@ -126,6 +141,18 @@ export function GestorHomeScreen() {
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Text style={[styles.sectionTitle, { color: theme.text }]}>Visão geral de hoje</Text>
+
+        {notificacoes.suportado && (
+          <View style={styles.notificationsButtonWrapper}>
+            <Button
+              label={notificacoes.ativas ? "Notificações ativadas" : "Ativar notificações"}
+              variant="secondary"
+              icon={BellIcon}
+              loading={notificacoes.carregando}
+              onPress={notificacoes.alternar}
+            />
+          </View>
+        )}
 
         <View style={styles.summaryGrid}>
           {resumo.map((item) => (
@@ -220,6 +247,9 @@ const styles = StyleSheet.create({
     fontSize: 19,
     fontWeight: "800",
     marginBottom: 12,
+  },
+  notificationsButtonWrapper: {
+    marginBottom: 16,
   },
   summaryGrid: {
     flexDirection: "row",

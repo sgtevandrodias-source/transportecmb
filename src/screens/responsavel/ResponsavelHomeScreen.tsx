@@ -1,5 +1,5 @@
-import { router } from "expo-router";
-import { useEffect, useState } from "react";
+import { router, useFocusEffect } from "expo-router";
+import { useCallback, useRef, useState } from "react";
 import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 
 import { TripStatusCard } from "@/components/responsavel/TripStatusCard";
@@ -8,7 +8,7 @@ import { Card } from "@/components/ui/Card";
 import { ScreenContainer } from "@/components/ui/ScreenContainer";
 import { ScreenHeader } from "@/components/ui/ScreenHeader";
 import { Text } from "@/components/ui/Text";
-import { BackpackIcon, CheckIcon, XIcon } from "@/components/ui/icons";
+import { BackpackIcon, BellIcon, CheckIcon, XIcon } from "@/components/ui/icons";
 import { useAuth } from "@/auth/session-context";
 import { useRequireAuth } from "@/auth/with-auth-guard";
 import { Radii } from "@/constants/theme";
@@ -16,6 +16,8 @@ import { alunosRepository } from "@/data/repositories/alunos.repository";
 import { confirmacoesRepository } from "@/data/repositories/confirmacoes.repository";
 import { viagensRepository } from "@/data/repositories/viagens.repository";
 import { Aluno, ConfirmacaoResponsavel, SentidoViagem, Viagem } from "@/domain/types";
+import { usePolling } from "@/hooks/use-polling";
+import { usePushNotifications } from "@/hooks/use-push-notifications";
 import { useTheme } from "@/hooks/use-theme";
 import { acompanhamentoService, Acompanhamento, ToneAcompanhamento } from "@/services/acompanhamento-service";
 
@@ -61,33 +63,43 @@ export function ResponsavelHomeScreen() {
   const [acompanhamentoIda, setAcompanhamentoIda] = useState<Acompanhamento | null>(null);
   const [acompanhamentoVolta, setAcompanhamentoVolta] = useState<Acompanhamento | null>(null);
 
-  useEffect(() => {
+  const notificacoes = usePushNotifications();
+
+  const alunoSelecionadoIdRef = useRef<number | null>(null);
+
+  const carregarDados = useCallback(async () => {
     if (!usuario) {
       return;
     }
 
-    async function carregarDados() {
-      const todosOsAlunos = await alunosRepository.list();
-      const filhos = todosOsAlunos.filter((aluno) => aluno.responsavelId === usuario!.id);
+    const todosOsAlunos = await alunosRepository.list();
+    const filhos = todosOsAlunos.filter((aluno) => aluno.responsavelId === usuario.id);
 
-      setAlunosVinculados(filhos);
+    setAlunosVinculados(filhos);
 
-      const primeiroFilho = filhos[0] ?? null;
-      setAlunoSelecionado(primeiroFilho);
+    const alunoAtual =
+      filhos.find((filho) => filho.id === alunoSelecionadoIdRef.current) ?? filhos[0] ?? null;
+    alunoSelecionadoIdRef.current = alunoAtual?.id ?? null;
+    setAlunoSelecionado(alunoAtual);
 
-      const [ida, volta] = await Promise.all([
-        viagensRepository.buscarAtualPorSentido("ida"),
-        viagensRepository.buscarAtualPorSentido("volta"),
-      ]);
+    const [ida, volta] = await Promise.all([
+      viagensRepository.buscarAtualPorSentido("ida"),
+      viagensRepository.buscarAtualPorSentido("volta"),
+    ]);
 
-      setViagemIda(ida);
-      setViagemVolta(volta);
+    setViagemIda(ida);
+    setViagemVolta(volta);
 
-      await carregarConfirmacoesEAcompanhamento(primeiroFilho, ida, volta);
-    }
-
-    carregarDados();
+    await carregarConfirmacoesEAcompanhamento(alunoAtual, ida, volta);
   }, [usuario]);
+
+  useFocusEffect(
+    useCallback(() => {
+      carregarDados();
+    }, [carregarDados]),
+  );
+
+  usePolling(carregarDados, 10000);
 
   async function carregarConfirmacoesEAcompanhamento(
     aluno: Aluno | null,
@@ -112,6 +124,7 @@ export function ResponsavelHomeScreen() {
   }
 
   async function selecionarAluno(aluno: Aluno) {
+    alunoSelecionadoIdRef.current = aluno.id;
     setAlunoSelecionado(aluno);
     await carregarConfirmacoesEAcompanhamento(aluno, viagemIda, viagemVolta);
   }
@@ -197,6 +210,18 @@ export function ResponsavelHomeScreen() {
             <BackpackIcon size={26} color={theme.primary} weight="bold" />
           </View>
         </Card>
+
+        {notificacoes.suportado && (
+          <View style={styles.notificationsButtonWrapper}>
+            <Button
+              label={notificacoes.ativas ? "Notificações ativadas" : "Ativar notificações"}
+              variant={notificacoes.ativas ? "secondary" : "accent"}
+              icon={BellIcon}
+              loading={notificacoes.carregando}
+              onPress={notificacoes.alternar}
+            />
+          </View>
+        )}
 
         {acompanhamentoIda && (
           <TripStatusCard
@@ -388,6 +413,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    marginBottom: 16,
+  },
+  notificationsButtonWrapper: {
     marginBottom: 16,
   },
   childInfoArea: {

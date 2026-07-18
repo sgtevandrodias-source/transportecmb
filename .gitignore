@@ -44,3 +44,4 @@ example
 
 # Cloudflare / wrangler local state
 .wrangler/
+.dev.vars
