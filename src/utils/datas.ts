@@ -17,3 +17,11 @@ export function obterHorarioAtual() {
     minute: "2-digit",
   });
 }
+
+/** Data de hoje no mesmo formato "DD/MM/AAAA" usado em `viagem.data`. */
+export function obterDataAtual() {
+  const agora = new Date();
+  const dia = String(agora.getDate()).padStart(2, "0");
+  const mes = String(agora.getMonth() + 1).padStart(2, "0");
+  return `${dia}/${mes}/${agora.getFullYear()}`;
+}

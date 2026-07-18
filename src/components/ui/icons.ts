@@ -10,6 +10,7 @@
  * o que faz o bundler processar todos os arquivos só para pegar um punhado
  * de ícones.
  */
+export { ArrowLeftIcon } from "phosphor-react-native/src/icons/ArrowLeft";
 export { ArrowsClockwiseIcon } from "phosphor-react-native/src/icons/ArrowsClockwise";
 export { BackpackIcon } from "phosphor-react-native/src/icons/Backpack";
 export { BellIcon } from "phosphor-react-native/src/icons/Bell";
@@ -22,8 +23,10 @@ export { CaretRightIcon } from "phosphor-react-native/src/icons/CaretRight";
 export { CheckCircleIcon } from "phosphor-react-native/src/icons/CheckCircle";
 export { CheckIcon } from "phosphor-react-native/src/icons/Check";
 export { ClockIcon } from "phosphor-react-native/src/icons/Clock";
+export { FilePdfIcon } from "phosphor-react-native/src/icons/FilePdf";
 export { HourglassIcon } from "phosphor-react-native/src/icons/Hourglass";
 export { HouseIcon } from "phosphor-react-native/src/icons/House";
+export { LockIcon } from "phosphor-react-native/src/icons/Lock";
 export { MapPinIcon } from "phosphor-react-native/src/icons/MapPin";
 export { PencilSimpleIcon } from "phosphor-react-native/src/icons/PencilSimple";
 export { PlusIcon } from "phosphor-react-native/src/icons/Plus";

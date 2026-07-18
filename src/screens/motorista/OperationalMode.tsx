@@ -1,8 +1,18 @@
+import { useRef } from "react";
 import { SafeAreaView, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import { Swipeable } from "react-native-gesture-handler";
 
 import { Card } from "@/components/ui/Card";
 import { Text } from "@/components/ui/Text";
-import { CaretLeftIcon, CheckCircleIcon, CheckIcon, MapPinIcon } from "@/components/ui/icons";
+import {
+  ArrowLeftIcon,
+  ArrowsClockwiseIcon,
+  CaretLeftIcon,
+  CheckCircleIcon,
+  CheckIcon,
+  MapPinIcon,
+  WarningCircleIcon,
+} from "@/components/ui/icons";
 import { Radii } from "@/constants/theme";
 import { AlunoMotorista, SituacaoEmbarque, Viagem } from "@/domain/types";
 import { useTheme } from "@/hooks/use-theme";
@@ -37,6 +47,18 @@ export function OperationalMode({
   const theme = useTheme();
   const totalFaltando = alunosConfirmados.length - totalResolvidos;
   const alunoEstaEmRevisita = alunoAtual?.situacao === "revisitar";
+  const swipeableRef = useRef<Swipeable>(null);
+
+  const textoAcaoRevisita = alunoEstaEmRevisita ? "Não localizado definitivamente" : "Revisitar depois";
+
+  function acionarRevisita() {
+    if (!alunoAtual) {
+      return;
+    }
+
+    onAlterarSituacao(alunoAtual.id, alunoEstaEmRevisita ? "nao-localizado" : "revisitar");
+    swipeableRef.current?.close();
+  }
 
   return (
     <SafeAreaView style={[styles.page, { backgroundColor: theme.page }]}>
@@ -80,65 +102,77 @@ export function OperationalMode({
           </Card>
 
           {alunoAtual ? (
-            <Card style={styles.currentStudentCard}>
-              <Text style={[styles.currentStudentLabel, { color: theme.textMuted }]}>
-                {alunoEstaEmRevisita ? "RETORNO AO PONTO" : "PRÓXIMO EMBARQUE"}
-              </Text>
-
-              <View style={styles.currentPointRow}>
-                <MapPinIcon size={16} color={theme.primary} weight="bold" />
-                <Text style={[styles.currentPoint, { color: theme.primary }]}>
-                  {alunoAtual.ponto}
-                </Text>
-              </View>
-
-              <Text style={[styles.currentStudentName, { color: theme.text }]}>
-                {alunoAtual.nome}
-              </Text>
-
-              <Text style={[styles.currentStudentInfo, { color: theme.textSecondary }]}>
-                {alunoAtual.serie} • Turno {alunoAtual.turno}
-              </Text>
-
-              {alunoEstaEmRevisita && (
-                <View style={[styles.revisitNotice, { backgroundColor: theme.infoBg }]}>
-                  <Text style={[styles.revisitNoticeText, { color: theme.info }]}>
-                    Este aluno não estava no ponto na primeira passagem.
+            <Swipeable
+              ref={swipeableRef}
+              overshootRight={false}
+              rightThreshold={64}
+              renderRightActions={() => (
+                <View style={[styles.swipeAction, { backgroundColor: theme.warningBg }]}>
+                  {alunoEstaEmRevisita ? (
+                    <WarningCircleIcon size={22} color={theme.warning} weight="bold" />
+                  ) : (
+                    <ArrowsClockwiseIcon size={22} color={theme.warning} weight="bold" />
+                  )}
+                  <Text style={[styles.swipeActionText, { color: theme.warning }]}>
+                    {textoAcaoRevisita}
                   </Text>
                 </View>
               )}
+              onSwipeableOpen={acionarRevisita}
+            >
+              <Card style={styles.currentStudentCard}>
+                <Text style={[styles.currentStudentLabel, { color: theme.textMuted }]}>
+                  {alunoEstaEmRevisita ? "RETORNO AO PONTO" : "PRÓXIMO EMBARQUE"}
+                </Text>
 
-              <TouchableOpacity
-                style={[styles.bigBoardButton, { backgroundColor: theme.success }]}
-                onPress={() => onAlterarSituacao(alunoAtual.id, "embarcou")}
-              >
-                <CheckIcon size={30} color="#FFFFFF" weight="bold" />
-                <Text style={styles.bigBoardButtonText}>EMBARCOU</Text>
-              </TouchableOpacity>
-
-              <View style={styles.secondaryActions}>
-                <TouchableOpacity
-                  style={[styles.secondaryButton, { backgroundColor: theme.dangerBg }]}
-                  onPress={() => onAlterarSituacao(alunoAtual.id, "ausente")}
-                >
-                  <Text style={[styles.secondaryActionText, { color: theme.danger }]}>Ausente</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[styles.secondaryButton, { backgroundColor: theme.warningBg }]}
-                  onPress={() =>
-                    onAlterarSituacao(
-                      alunoAtual.id,
-                      alunoEstaEmRevisita ? "nao-localizado" : "revisitar",
-                    )
-                  }
-                >
-                  <Text style={[styles.secondaryActionText, { color: theme.warning }]}>
-                    {alunoEstaEmRevisita ? "Não localizado definitivamente" : "Revisitar depois"}
+                <View style={styles.currentPointRow}>
+                  <MapPinIcon size={16} color={theme.primary} weight="bold" />
+                  <Text style={[styles.currentPoint, { color: theme.primary }]}>
+                    {alunoAtual.ponto}
                   </Text>
+                </View>
+
+                <Text style={[styles.currentStudentName, { color: theme.text }]}>
+                  {alunoAtual.nome}
+                </Text>
+
+                <Text style={[styles.currentStudentInfo, { color: theme.textSecondary }]}>
+                  {alunoAtual.serie} • Turno {alunoAtual.turno}
+                </Text>
+
+                {alunoEstaEmRevisita && (
+                  <View style={[styles.revisitNotice, { backgroundColor: theme.infoBg }]}>
+                    <Text style={[styles.revisitNoticeText, { color: theme.info }]}>
+                      Este aluno não estava no ponto na primeira passagem.
+                    </Text>
+                  </View>
+                )}
+
+                <TouchableOpacity
+                  style={[styles.bigBoardButton, { backgroundColor: theme.success }]}
+                  onPress={() => onAlterarSituacao(alunoAtual.id, "embarcou")}
+                >
+                  <CheckIcon size={30} color="#FFFFFF" weight="bold" />
+                  <Text style={styles.bigBoardButtonText}>EMBARCOU</Text>
                 </TouchableOpacity>
-              </View>
-            </Card>
+
+                <View style={styles.secondaryActions}>
+                  <TouchableOpacity
+                    style={[styles.secondaryButton, { backgroundColor: theme.dangerBg }]}
+                    onPress={() => onAlterarSituacao(alunoAtual.id, "ausente")}
+                  >
+                    <Text style={[styles.secondaryActionText, { color: theme.danger }]}>Ausente</Text>
+                  </TouchableOpacity>
+                </View>
+
+                <View style={styles.swipeHint}>
+                  <ArrowLeftIcon size={14} color={theme.textMuted} weight="bold" />
+                  <Text style={[styles.swipeHintText, { color: theme.textMuted }]}>
+                    Deslize o card para {textoAcaoRevisita.toLowerCase()}
+                  </Text>
+                </View>
+              </Card>
+            </Swipeable>
           ) : (
             <View style={[styles.completedCard, { backgroundColor: theme.successBg }]}>
               <CheckCircleIcon size={48} color={theme.success} weight="fill" />
@@ -241,6 +275,24 @@ const styles = StyleSheet.create({
   secondaryActions: { flexDirection: "row", gap: 12, marginTop: 14, width: "100%" },
   secondaryButton: { flex: 1, borderRadius: Radii.medium, paddingVertical: 20, alignItems: "center" },
   secondaryActionText: { fontSize: 14, fontWeight: "700", textAlign: "center" },
+  swipeHint: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    marginTop: 16,
+  },
+  swipeHintText: { fontSize: 12, fontWeight: "600" },
+  swipeAction: {
+    width: 130,
+    borderRadius: Radii.large,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    marginLeft: 10,
+    paddingHorizontal: 10,
+  },
+  swipeActionText: { fontSize: 13, fontWeight: "700", textAlign: "center" },
   completedCard: { borderRadius: Radii.xlarge, padding: 24, alignItems: "center" },
   completedTitle: { fontSize: 20, fontWeight: "800", textAlign: "center", marginTop: 14 },
   completedText: { fontSize: 14, lineHeight: 21, textAlign: "center", marginTop: 8 },

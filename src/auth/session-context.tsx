@@ -33,6 +33,7 @@ type AuthContextValue = {
   carregando: boolean;
   login: (perfil: Perfil, credenciais: Credenciais) => Promise<Usuario>;
   criarContaGestor: (dados: NovaContaGestor) => Promise<Usuario>;
+  atualizarUsuario: (alteracoes: Partial<Pick<Usuario, "nome" | "email" | "telefone">>) => void;
   logout: () => Promise<void>;
 };
 
@@ -85,6 +86,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return resposta.usuario;
   }, []);
 
+  // Reflete localmente uma edição da própria conta (ex.: tela "Minha
+  // conta") sem precisar buscar /api/auth/me de novo.
+  const atualizarUsuario = useCallback(
+    (alteracoes: Partial<Pick<Usuario, "nome" | "email" | "telefone">>) => {
+      setUsuario((atual) => (atual ? { ...atual, ...alteracoes } : atual));
+    },
+    [],
+  );
+
   const logout = useCallback(async () => {
     try {
       await apiClient.post("/api/auth/logout");
@@ -97,8 +107,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ usuario, carregando, login, criarContaGestor, logout }),
-    [usuario, carregando, login, criarContaGestor, logout],
+    () => ({ usuario, carregando, login, criarContaGestor, atualizarUsuario, logout }),
+    [usuario, carregando, login, criarContaGestor, atualizarUsuario, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

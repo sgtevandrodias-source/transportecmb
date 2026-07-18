@@ -358,8 +358,8 @@ export function MotoristaHomeScreen() {
           <EmptyState
             tone="warning"
             icon={UsersThreeIcon}
-            title="Nenhum aluno para o turno desta viagem"
-            message={`Não há alunos cadastrados no turno "${viagemAtual.turno}". Confira o turno da viagem e o turno dos alunos no cadastro.`}
+            title="Nenhum aluno cadastrado"
+            message="O gestor precisa cadastrar alunos para eles aparecerem nesta viagem."
           />
         ) : (
           <>

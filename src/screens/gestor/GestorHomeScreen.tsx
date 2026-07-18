@@ -13,6 +13,7 @@ import {
   BusIcon,
   CheckCircleIcon,
   HourglassIcon,
+  LockIcon,
   MapPinIcon,
   SteeringWheelIcon,
   UserCircleIcon,
@@ -37,7 +38,7 @@ type MenuItem = {
   icone: Icon;
   titulo: string;
   descricao: string;
-  href: "/alunos" | "/pontos" | "/viagens" | "/responsaveis" | "/motoristas";
+  href: "/alunos" | "/pontos" | "/viagens" | "/responsaveis" | "/motoristas" | "/minha-conta";
 };
 
 const menu: MenuItem[] = [
@@ -46,6 +47,7 @@ const menu: MenuItem[] = [
   { icone: BusIcon, titulo: "Viagens", descricao: "Criar e acompanhar viagens", href: "/viagens" },
   { icone: UserCircleIcon, titulo: "Responsáveis", descricao: "Cadastrar pais e responsáveis", href: "/responsaveis" },
   { icone: SteeringWheelIcon, titulo: "Motoristas", descricao: "Cadastrar motoristas e acessos", href: "/motoristas" },
+  { icone: LockIcon, titulo: "Minha conta", descricao: "Alterar e-mail e senha de acesso", href: "/minha-conta" },
 ];
 
 function textoStatusViagem(status: Viagem["status"]) {

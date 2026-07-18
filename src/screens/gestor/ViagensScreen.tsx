@@ -5,20 +5,26 @@ import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { DatePicker } from "@/components/ui/DatePicker";
 import { FormField } from "@/components/ui/FormField";
 import { OptionRow } from "@/components/ui/OptionRow";
 import { ScreenContainer } from "@/components/ui/ScreenContainer";
 import { ScreenHeader } from "@/components/ui/ScreenHeader";
 import { Text } from "@/components/ui/Text";
-import { BuildingsIcon, BusIcon } from "@/components/ui/icons";
+import { TimePicker } from "@/components/ui/TimePicker";
+import { BuildingsIcon, BusIcon, FilePdfIcon } from "@/components/ui/icons";
 import { useRequireAuth } from "@/auth/with-auth-guard";
 import { Radii } from "@/constants/theme";
 import { TURNOS } from "@/constants/opcoes";
 import { podeTransicionarViagem } from "@/domain/state-machines";
 import { SentidoViagem, Viagem } from "@/domain/types";
+import { useAlunos } from "@/hooks/use-alunos";
+import { usePontos } from "@/hooks/use-pontos";
 import { useViagens } from "@/hooks/use-viagens";
 import { useTheme } from "@/hooks/use-theme";
+import { pdfService } from "@/services/pdf-service";
 import { viagemService } from "@/services/viagem-service";
+import { obterDataAtual } from "@/utils/datas";
 
 function textoStatus(status: Viagem["status"]) {
   switch (status) {
@@ -50,6 +56,8 @@ export function ViagensScreen() {
   const { carregando: carregandoSessao } = useRequireAuth("gestor");
   const theme = useTheme();
   const { items: viagens, create, update, remove, refetch } = useViagens();
+  const { items: alunos } = useAlunos();
+  const { items: pontos } = usePontos();
 
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [viagemEmEdicao, setViagemEmEdicao] = useState<number | null>(null);
@@ -58,6 +66,23 @@ export function ViagensScreen() {
   const [turno, setTurno] = useState("");
   const [horario, setHorario] = useState("");
   const [motorista, setMotorista] = useState("");
+
+  const [dataRelatorio, setDataRelatorio] = useState(obterDataAtual);
+  const [gerandoPdf, setGerandoPdf] = useState(false);
+
+  async function gerarPdfDoDia() {
+    setGerandoPdf(true);
+
+    try {
+      const viagensDoDia = viagens.filter((viagem) => viagem.data === dataRelatorio);
+      await pdfService.gerarPdfDoDia(dataRelatorio, viagensDoDia, alunos, pontos);
+    } catch (erro) {
+      console.log("Erro ao gerar PDF:", erro);
+      alert("Não foi possível gerar o PDF.");
+    } finally {
+      setGerandoPdf(false);
+    }
+  }
 
   function limparFormulario() {
     setData("");
@@ -143,6 +168,20 @@ export function ViagensScreen() {
           </Text>
         </Card>
 
+        <Card style={styles.reportCard}>
+          <Text style={[styles.formTitle, { color: theme.text }]}>Relatório do dia</Text>
+
+          <DatePicker label="Data das viagens" value={dataRelatorio} onChange={setDataRelatorio} />
+
+          <Button
+            label="Gerar PDF do dia"
+            variant="secondary"
+            icon={FilePdfIcon}
+            loading={gerandoPdf}
+            onPress={gerarPdfDoDia}
+          />
+        </Card>
+
         <View style={styles.addButtonWrapper}>
           <Button
             label={mostrarFormulario ? "Cancelar cadastro" : "+ Cadastrar viagem"}
@@ -157,7 +196,7 @@ export function ViagensScreen() {
               {viagemEmEdicao !== null ? "Editar viagem" : "Nova viagem"}
             </Text>
 
-            <FormField label="Data" placeholder="Exemplo: 14/07/2026" value={data} onChangeText={setData} />
+            <DatePicker label="Data" value={data} onChange={setData} />
 
             <Text style={[styles.label, { color: theme.text }]}>Sentido</Text>
 
@@ -190,7 +229,7 @@ export function ViagensScreen() {
             <Text style={[styles.label, { color: theme.text }]}>Turno</Text>
             <OptionRow options={TURNOS} value={turno} onChange={setTurno} />
 
-            <FormField label="Horário" placeholder="Exemplo: 06:30" value={horario} onChangeText={setHorario} />
+            <TimePicker label="Horário" value={horario} onChange={setHorario} />
             <FormField
               label="Motorista"
               placeholder="Digite o nome do motorista"
@@ -316,6 +355,9 @@ const styles = StyleSheet.create({
   addButtonWrapper: {
     marginTop: 16,
     marginBottom: 18,
+  },
+  reportCard: {
+    marginTop: 16,
   },
   formCard: {
     marginBottom: 22,
